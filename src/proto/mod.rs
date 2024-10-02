@@ -3,7 +3,7 @@ pub mod json;
 
 pub mod protobuf;
 
-use bytes::{BufMut};
+use bytes::BufMut;
 
 pub trait ClientProtocol {
     type Header;

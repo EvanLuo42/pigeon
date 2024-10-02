@@ -1,14 +1,14 @@
 use crate::error::PigeonError;
 use crate::network::NetworkingProtocol;
-use bytes::{Buf, Bytes, BytesMut};
-use std::net::SocketAddr;
-use std::sync::{Arc};
 use async_trait::async_trait;
+use bytes::{Buf, Bytes, BytesMut};
+use std::net::{SocketAddr};
+use std::sync::Arc;
 use tokio::net::{ToSocketAddrs, UdpSocket};
-use tokio::sync::Mutex;
 
+#[derive(Clone)]
 pub struct UdpProtocol {
-    socket: Option<Arc<Mutex<UdpSocket>>>
+    socket: Option<Arc<UdpSocket>>
 }
 
 impl UdpProtocol {
@@ -22,15 +22,15 @@ impl UdpProtocol {
 #[async_trait]
 impl NetworkingProtocol for UdpProtocol {
     async fn listen<A: ToSocketAddrs + Send>(&mut self, ip_addr: A) -> Result<(), PigeonError> {
-        self.socket = Some(Arc::new(Mutex::new(UdpSocket::bind(ip_addr).await?)));
+        self.socket = Some(Arc::new(UdpSocket::bind(ip_addr).await?));
         Ok(())
     }
 
     async fn send<A: ToSocketAddrs + Send>(&self, buf: Bytes, addr: A) -> Result<usize, PigeonError> {
-        Ok(self.socket.clone().unwrap().lock().await.send_to(buf.chunk(), addr).await?)
+        Ok(self.socket.clone().unwrap().send_to(buf.chunk(), addr).await?)
     }
 
     async fn receive(&self, buf: &mut BytesMut) -> Result<SocketAddr, PigeonError> {
-        Ok(self.socket.clone().unwrap().lock().await.recv_from(buf).await?.1)
+        Ok(self.socket.clone().unwrap().recv_from(buf).await?.1)
     }
 }
